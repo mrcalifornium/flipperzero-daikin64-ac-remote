@@ -15,7 +15,8 @@
 #define DAIKIN64_SETTINGS_DIR EXT_PATH("apps_data/daikin64_ac_remote")
 #define DAIKIN64_SETTINGS_PATH EXT_PATH("apps_data/daikin64_ac_remote/state.bin")
 #define DAIKIN64_SETTINGS_MAGIC 0xD6
-#define DAIKIN64_SETTINGS_VERSION 1
+#define DAIKIN64_SETTINGS_VERSION 2
+#define DAIKIN64_FAVORITE_COUNT 5
 
 typedef enum {
     Daikin64ViewRemote,
@@ -42,8 +43,6 @@ typedef enum {
     Daikin64FuncQuiet,
     Daikin64FuncSleep,
     Daikin64FuncSwing,
-    Daikin64FuncLed,
-    Daikin64FuncClock,
     Daikin64FuncCount,
 } Daikin64FuncItem;
 
@@ -62,7 +61,7 @@ typedef enum {
     Daikin64FavoriteTwo,
     Daikin64FavoriteThree,
     Daikin64FavoriteFour,
-    Daikin64FavoriteSave,
+    Daikin64FavoriteFive,
     Daikin64FavoriteCount,
 } Daikin64FavoriteItem;
 
@@ -73,7 +72,7 @@ typedef struct {
 
 typedef struct {
     Daikin64State state;
-    Daikin64State favorites[4];
+    Daikin64State favorites[DAIKIN64_FAVORITE_COUNT];
     uint8_t page;
     uint8_t selected;
     uint8_t mode_index;
@@ -89,7 +88,7 @@ typedef struct {
 
 typedef struct {
     Daikin64State state;
-    Daikin64State favorites[4];
+    Daikin64State favorites[DAIKIN64_FAVORITE_COUNT];
 } Daikin64PersistedState;
 
 static const Daikin64Option daikin64_modes[] = {
@@ -475,12 +474,10 @@ static void daikin64_draw_main(Canvas* canvas, const Daikin64RemoteModel* model)
 static void daikin64_draw_functions(Canvas* canvas, const Daikin64RemoteModel* model) {
     daikin64_draw_header(canvas, "FUNCS", "2/4");
 
-    daikin64_draw_button(canvas, 6, 32, 52, 14, "TURBO", model->selected == Daikin64FuncTurbo);
-    daikin64_draw_button(canvas, 6, 51, 52, 14, "QUIET", model->selected == Daikin64FuncQuiet);
-    daikin64_draw_button(canvas, 6, 70, 52, 14, "SLEEP", model->selected == Daikin64FuncSleep);
-    daikin64_draw_button(canvas, 6, 89, 52, 14, "SWING", model->selected == Daikin64FuncSwing);
-    daikin64_draw_button(canvas, 6, 108, 24, 13, "LED", model->selected == Daikin64FuncLed);
-    daikin64_draw_button(canvas, 34, 108, 24, 13, "CLK", model->selected == Daikin64FuncClock);
+    daikin64_draw_button(canvas, 6, 35, 52, 14, "TURBO", model->selected == Daikin64FuncTurbo);
+    daikin64_draw_button(canvas, 6, 56, 52, 14, "QUIET", model->selected == Daikin64FuncQuiet);
+    daikin64_draw_button(canvas, 6, 77, 52, 14, "SLEEP", model->selected == Daikin64FuncSleep);
+    daikin64_draw_button(canvas, 6, 98, 52, 14, "SWING", model->selected == Daikin64FuncSwing);
 }
 
 static void daikin64_draw_timer(Canvas* canvas, const Daikin64RemoteModel* model) {
@@ -522,10 +519,10 @@ static void daikin64_draw_favorites(Canvas* canvas, const Daikin64RemoteModel* m
     daikin64_draw_header(canvas, "FAVS", "4/4");
     canvas_set_font(canvas, FontSecondary);
 
-    for(uint8_t i = 0; i < 4; i++) {
+    for(uint8_t i = 0; i < DAIKIN64_FAVORITE_COUNT; i++) {
         const Daikin64State* favorite = &model->favorites[i];
         uint8_t mode_index = daikin64_find_mode_index(favorite->mode);
-        uint8_t y = 37 + i * 15;
+        uint8_t y = 34 + i * 13;
         snprintf(slot, sizeof(slot), "%u", i + 1);
         snprintf(temp, sizeof(temp), "%u", favorite->temperature);
 
@@ -542,9 +539,6 @@ static void daikin64_draw_favorites(Canvas* canvas, const Daikin64RemoteModel* m
             canvas_draw_str(canvas, 48, y, temp);
         }
     }
-
-    daikin64_draw_button(canvas, 6, 98, 52, 13, "SAVE", model->selected == Daikin64FavoriteSave);
-    canvas_draw_str(canvas, 17, 122, "OK SEND");
 }
 
 static void daikin64_draw_callback(Canvas* canvas, void* context) {
@@ -588,6 +582,7 @@ static bool daikin64_handle_ok(
     Daikin64State* send_state,
     bool* should_send,
     bool* power_toggle,
+    bool* state_changed,
     bool long_press) {
     if(model->page == Daikin64PageMain) {
         switch(model->selected) {
@@ -596,6 +591,7 @@ static bool daikin64_handle_ok(
             *send_state = model->state;
             *power_toggle = true;
             *should_send = true;
+            *state_changed = true;
             break;
         case Daikin64MainSend:
             daikin64_prepare_setting_send(send_state, &model->state);
@@ -606,12 +602,14 @@ static bool daikin64_handle_ok(
             model->state.mode = daikin64_modes[model->mode_index].value;
             daikin64_prepare_setting_send(send_state, &model->state);
             *should_send = true;
+            *state_changed = true;
             break;
         case Daikin64MainFan:
             model->fan_index = (model->fan_index + 1) % COUNT_OF(daikin64_fans);
             model->state.fan = daikin64_fans[model->fan_index].value;
             daikin64_prepare_setting_send(send_state, &model->state);
             *should_send = true;
+            *state_changed = true;
             break;
         default:
             break;
@@ -633,12 +631,6 @@ static bool daikin64_handle_ok(
         case Daikin64FuncSwing:
             model->state.swing = !model->state.swing;
             break;
-        case Daikin64FuncLed:
-            return false;
-        case Daikin64FuncClock:
-            daikin64_prepare_setting_send(send_state, &model->state);
-            *should_send = true;
-            return true;
         default:
             break;
         }
@@ -646,6 +638,7 @@ static bool daikin64_handle_ok(
         model->fan_index = daikin64_find_fan_index(model->state.fan);
         daikin64_prepare_setting_send(send_state, &model->state);
         *should_send = true;
+        *state_changed = true;
         return true;
     }
 
@@ -654,6 +647,7 @@ static bool daikin64_handle_ok(
         switch(model->selected) {
         case Daikin64TimerOnValue:
             model->state.on_timer_minutes = daikin64_next_timer_minutes(model->state.on_timer_minutes);
+            *state_changed = true;
             return false;
         case Daikin64TimerOnSet:
             model->state.on_timer_enabled = true;
@@ -664,6 +658,7 @@ static bool daikin64_handle_ok(
         case Daikin64TimerOffValue:
             model->state.off_timer_minutes =
                 daikin64_next_timer_minutes(model->state.off_timer_minutes);
+            *state_changed = true;
             return false;
         case Daikin64TimerOffSet:
             model->state.off_timer_enabled = true;
@@ -677,24 +672,22 @@ static bool daikin64_handle_ok(
 
         daikin64_prepare_setting_send(send_state, &model->state);
         *should_send = true;
+        *state_changed = true;
         return true;
     }
 
     if(model->page == Daikin64PageFavorites) {
-        if(model->selected == Daikin64FavoriteSave) {
-            model->favorites[0] = model->state;
-            return false;
-        }
-
-        if(model->selected < 4) {
+        if(model->selected < DAIKIN64_FAVORITE_COUNT) {
             if(long_press) {
                 model->favorites[model->selected] = model->state;
+                *state_changed = true;
                 return false;
             }
 
             daikin64_apply_favorite(model, model->selected);
             daikin64_prepare_setting_send(send_state, &model->state);
             *should_send = true;
+            *state_changed = true;
         }
         return true;
     }
@@ -787,9 +780,13 @@ static bool daikin64_input_callback(InputEvent* event, void* context) {
             Daikin64RemoteModel * model,
             {
                 bool handled = daikin64_handle_ok(
-                    model, &send_state, &should_send, &power_toggle, event->type == InputTypeLong);
+                    model,
+                    &send_state,
+                    &should_send,
+                    &power_toggle,
+                    &should_save,
+                    event->type == InputTypeLong);
                 notify_only = !handled || !should_send;
-                should_save = handled;
             },
             true);
 
@@ -820,7 +817,7 @@ static bool daikin64_navigation_callback(void* context) {
 }
 
 static void daikin64_init_favorites(Daikin64RemoteModel* model) {
-    for(uint8_t i = 0; i < 4; i++) {
+    for(uint8_t i = 0; i < DAIKIN64_FAVORITE_COUNT; i++) {
         daikin64_init(&model->favorites[i]);
     }
 
@@ -839,6 +836,10 @@ static void daikin64_init_favorites(Daikin64RemoteModel* model) {
     model->favorites[3].mode = Daikin64ModeFan;
     model->favorites[3].temperature = 27;
     model->favorites[3].fan = Daikin64FanHigh;
+
+    model->favorites[4].mode = Daikin64ModeAuto;
+    model->favorites[4].temperature = 27;
+    model->favorites[4].fan = Daikin64FanAuto;
 }
 
 static Daikin64App* daikin64_app_alloc(void) {

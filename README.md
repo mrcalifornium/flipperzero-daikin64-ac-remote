@@ -6,7 +6,7 @@ Flipper Zero external app for sending dynamically generated Daikin64 HVAC IR fra
 
 - Daikin64 packet generation, not stored raw captures
 - Power toggle, mode, temperature, fan speed, swing, sleep, quiet, turbo, and timer controls
-- Favorite presets
+- Five favorite presets
 - Last-used state and favorites saved to `/ext/apps_data/daikin64_ac_remote/state.bin`
 
 ## Screenshots
@@ -48,6 +48,33 @@ ufbt build
 ```
 
 If building from the workspace root with a full firmware tree, use the normal user-app flow for `applications_user/daikin64_ac_remote`.
+
+## How To Use
+
+The app has four pages. Use Left/Right to switch pages and Up/Down to move between controls on the current page. Press OK to activate the selected control.
+
+Main page:
+
+- `PWR` sends the Daikin64 power-toggle frame.
+- `SEND` sends the currently displayed settings without changing them.
+- `MODE` cycles Auto, Cool, Heat, Dry, and Fan.
+- `FAN` cycles Auto, Low, Medium, High, Turbo, and Quiet.
+- Long-press Up/Down changes the temperature and sends the new setting.
+
+Functions page:
+
+- `TURBO`, `QUIET`, `SLEEP`, and `SWING` toggle the matching function and immediately send the updated setting.
+
+Timer page:
+
+- Select the timer value and press OK to step it forward in protocol-compatible 30 minute increments.
+- `SET` enables and sends that timer.
+- `CLR` clears and sends that timer.
+
+Favorites page:
+
+- Press OK on a favorite slot to load and send it.
+- Long-press OK on a favorite slot to save the current state into that slot.
 
 ## Protocol Notes
 
