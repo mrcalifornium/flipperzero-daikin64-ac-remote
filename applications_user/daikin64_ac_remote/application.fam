@@ -11,6 +11,6 @@ App(
     fap_icon_assets="assets",
     fap_category="Infrared",
     fap_description="Daikin64 APGS02-compatible AC remote",
-    fap_author="Codex",
-    fap_version="0.1.0",
+    fap_author="mrcalifornium",
+    fap_version="0.1",
 )
