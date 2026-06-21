@@ -2,6 +2,25 @@
 
 Flipper Zero external app for sending dynamically generated Daikin64 HVAC IR frames.
 
+## Features
+
+- Daikin64 packet generation, not stored raw captures
+- Power toggle, mode, temperature, fan speed, swing, sleep, quiet, turbo, and timer controls
+- Favorite presets
+- Last-used state and favorites saved to `/ext/apps_data/daikin64_ac_remote/state.bin`
+
+## Screenshots
+
+Screenshots captured from the app running on a connected Flipper Zero via qFlipper.
+
+| Main | Functions |
+|------|-----------|
+| ![Main screen](docs/screenshots/main.png) | ![Functions screen](docs/screenshots/functions.png) |
+
+| Timer | Favorites |
+|-------|-----------|
+| ![Timer screen](docs/screenshots/timer.png) | ![Favorites screen](docs/screenshots/favorites.png) |
+
 ## Layout
 
 ```text
@@ -79,3 +98,13 @@ Zero space 382
 The protocol test source in `tests/daikin64_vectors.c` checks packet generation and checksum verification against APGS02-style vectors.
 
 The supplied captures contain changing clock/timer bytes and button-specific state. This implementation uses the captured APGS02 clock/timer baseline `16 xx 41 23 10 85 27 xx` and regenerates the checksum after changing power, mode, temperature, fan, and swing.
+
+Before listing a Daikin indoor unit as compatible, use `TESTING_PROTOCOL.md` to record the model, original remote, app version, and pass/fail results for each function.
+
+## Credits
+
+- Daikin64 protocol behavior is based on the `IRDaikin64` implementation from [IRremoteESP8266](https://github.com/crankyoldgit/IRremoteESP8266), specifically `ir_Daikin.cpp` and `ir_Daikin.h`.
+- App structure was initially informed by [flipperzero-mitsubishi-ac-remote](https://github.com/achistyakov/flipperzero-mitsubishi-ac-remote). The Mitsubishi protocol implementation is not reused.
+- UI mockups and icon iteration used [Lopaka](https://lopaka.app/).
+- APGS02 validation captures and on-device testing were performed with a Daikin APGS02 remote and a Flipper Zero.
+- Development assistance was provided by OpenAI Codex.

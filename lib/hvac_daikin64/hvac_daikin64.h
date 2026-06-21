@@ -35,6 +35,10 @@ typedef struct {
     uint8_t fan;
     bool swing;
     bool sleep;
+    bool on_timer_enabled;
+    bool off_timer_enabled;
+    uint16_t on_timer_minutes;
+    uint16_t off_timer_minutes;
 } Daikin64State;
 
 void daikin64_init(Daikin64State* state);

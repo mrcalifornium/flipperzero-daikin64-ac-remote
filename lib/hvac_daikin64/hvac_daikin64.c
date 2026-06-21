@@ -40,6 +40,20 @@ static uint8_t daikin64_bcd(uint8_t value) {
     return (uint8_t)(((value / 10U) << 4) | (value % 10U));
 }
 
+static uint16_t daikin64_valid_timer_minutes(uint16_t minutes) {
+    if(minutes >= 24U * 60U) return 0;
+    return minutes;
+}
+
+static uint8_t daikin64_timer_lsb(uint16_t minutes, bool enabled) {
+    minutes = daikin64_valid_timer_minutes(minutes);
+
+    uint8_t value = daikin64_bcd(minutes / 60U) & 0x3F;
+    if((minutes % 60U) >= 30U) value |= 0x40;
+    if(enabled) value |= 0x80;
+    return value;
+}
+
 static void daikin64_set_clock_lsb(uint8_t frame[DAIKIN64_PACKET_SIZE], uint8_t hour, uint8_t minute) {
     frame[2] = daikin64_bcd(minute % 60U);
     frame[3] = daikin64_bcd(hour % 24U);
@@ -125,6 +139,10 @@ void daikin64_init(Daikin64State* state) {
     state->fan = Daikin64FanLow;
     state->swing = true;
     state->sleep = false;
+    state->on_timer_enabled = false;
+    state->off_timer_enabled = false;
+    state->on_timer_minutes = 10U * 60U;
+    state->off_timer_minutes = 18U * 60U;
 }
 
 void daikin64_build_packet(const Daikin64State* state, uint8_t packet[DAIKIN64_PACKET_SIZE]) {
@@ -142,6 +160,8 @@ void daikin64_build_packet(const Daikin64State* state, uint8_t packet[DAIKIN64_P
     }
 
     frame[1] = (uint8_t)((daikin64_valid_fan(state->fan) << 4) | daikin64_valid_mode(state->mode));
+    frame[4] = daikin64_timer_lsb(state->on_timer_minutes, state->on_timer_enabled);
+    frame[5] = daikin64_timer_lsb(state->off_timer_minutes, state->off_timer_enabled);
     frame[6] = daikin64_bcd(daikin64_clamp_temp(state->temperature));
     frame[7] = 0x04;
     if(state->swing) frame[7] |= 0x01;
@@ -178,6 +198,8 @@ void daikin64_build_power_packet(
     }
 
     frame[1] = (uint8_t)((daikin64_valid_fan(state->fan) << 4) | daikin64_valid_mode(state->mode));
+    frame[4] = daikin64_timer_lsb(state->on_timer_minutes, state->on_timer_enabled);
+    frame[5] = daikin64_timer_lsb(state->off_timer_minutes, state->off_timer_enabled);
     frame[6] = daikin64_bcd(daikin64_clamp_temp(state->temperature));
     frame[7] = 0x0C;
     if(state->swing) frame[7] |= 0x01;
