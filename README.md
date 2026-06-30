@@ -29,14 +29,13 @@ applications_user/
         application.fam
         daikin64_ac_remote.c
         hvac_daikin64_app_link.c
-
-lib/
-    hvac_daikin64/
-        hvac_daikin64.c
-        hvac_daikin64.h
+        lib/
+            hvac_daikin64/
+                hvac_daikin64.c
+                hvac_daikin64.h
 ```
 
-`hvac_daikin64_app_link.c` includes the library implementation so `ufbt` builds it as part of the standalone FAP while keeping the reusable protocol code under `lib/hvac_daikin64`.
+`hvac_daikin64_app_link.c` includes the library implementation so `ufbt` builds it as part of the standalone FAP while keeping the reusable protocol code under the app folder.
 
 ## Build
 

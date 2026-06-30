@@ -1,4 +1,4 @@
-#include "../lib/hvac_daikin64/hvac_daikin64.h"
+#include "../applications_user/daikin64_ac_remote/lib/hvac_daikin64/hvac_daikin64.h"
 
 #include <assert.h>
 #include <stdint.h>

@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../../lib/hvac_daikin64/hvac_daikin64.h"
+#include "lib/hvac_daikin64/hvac_daikin64.h"
 
 #define DAIKIN64_SETTINGS_DIR EXT_PATH("apps_data/daikin64_ac_remote")
 #define DAIKIN64_SETTINGS_PATH EXT_PATH("apps_data/daikin64_ac_remote/state.bin")
