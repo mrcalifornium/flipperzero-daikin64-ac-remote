@@ -12,11 +12,11 @@
 
 #include "lib/hvac_daikin64/hvac_daikin64.h"
 
-#define DAIKIN64_SETTINGS_DIR EXT_PATH("apps_data/daikin64_ac_remote")
-#define DAIKIN64_SETTINGS_PATH EXT_PATH("apps_data/daikin64_ac_remote/state.bin")
-#define DAIKIN64_SETTINGS_MAGIC 0xD6
+#define DAIKIN64_SETTINGS_DIR     EXT_PATH("apps_data/daikin64_ac_remote")
+#define DAIKIN64_SETTINGS_PATH    EXT_PATH("apps_data/daikin64_ac_remote/state.bin")
+#define DAIKIN64_SETTINGS_MAGIC   0xD6
 #define DAIKIN64_SETTINGS_VERSION 2
-#define DAIKIN64_FAVORITE_COUNT 5
+#define DAIKIN64_FAVORITE_COUNT   5
 
 typedef enum {
     Daikin64ViewRemote,
@@ -188,8 +188,7 @@ static bool daikin64_is_valid_fan(uint8_t fan) {
 static bool daikin64_is_valid_state(const Daikin64State* state) {
     return daikin64_is_valid_mode(state->mode) && daikin64_is_valid_fan(state->fan) &&
            (state->temperature >= DAIKIN64_MIN_TEMP) &&
-           (state->temperature <= DAIKIN64_MAX_TEMP) &&
-           (state->on_timer_minutes < 24U * 60U) &&
+           (state->temperature <= DAIKIN64_MAX_TEMP) && (state->on_timer_minutes < 24U * 60U) &&
            (state->off_timer_minutes < 24U * 60U);
 }
 
@@ -301,7 +300,8 @@ static void daikin64_draw_round_button(
     canvas_set_color(canvas, ColorBlack);
 }
 
-static void daikin64_draw_digit(Canvas* canvas, uint8_t x, uint8_t y, uint8_t digit, uint8_t scale) {
+static void
+    daikin64_draw_digit(Canvas* canvas, uint8_t x, uint8_t y, uint8_t digit, uint8_t scale) {
     if(digit > 9) return;
 
     for(uint8_t row = 0; row < 5; row++) {
@@ -500,16 +500,20 @@ static void daikin64_draw_timer(Canvas* canvas, const Daikin64RemoteModel* model
 
     canvas_draw_str(canvas, 7, 57, "ON");
     daikin64_draw_button(canvas, 27, 48, 33, 14, on_time, model->selected == Daikin64TimerOnValue);
-    daikin64_draw_round_button(canvas, 7, 66, 24, 13, "SET", model->selected == Daikin64TimerOnSet);
-    daikin64_draw_round_button(canvas, 35, 66, 24, 13, "CLR", model->selected == Daikin64TimerOnClear);
+    daikin64_draw_round_button(
+        canvas, 7, 66, 24, 13, "SET", model->selected == Daikin64TimerOnSet);
+    daikin64_draw_round_button(
+        canvas, 35, 66, 24, 13, "CLR", model->selected == Daikin64TimerOnClear);
 
     canvas_draw_line(canvas, 5, 83, 58, 83);
 
     canvas_draw_str(canvas, 7, 96, "OFF");
     daikin64_draw_button(
         canvas, 27, 87, 33, 14, off_time, model->selected == Daikin64TimerOffValue);
-    daikin64_draw_round_button(canvas, 7, 105, 24, 13, "SET", model->selected == Daikin64TimerOffSet);
-    daikin64_draw_round_button(canvas, 35, 105, 24, 13, "CLR", model->selected == Daikin64TimerOffClear);
+    daikin64_draw_round_button(
+        canvas, 7, 105, 24, 13, "SET", model->selected == Daikin64TimerOffSet);
+    daikin64_draw_round_button(
+        canvas, 35, 105, 24, 13, "CLR", model->selected == Daikin64TimerOffClear);
 }
 
 static void daikin64_draw_favorites(Canvas* canvas, const Daikin64RemoteModel* model) {
@@ -646,7 +650,8 @@ static bool daikin64_handle_ok(
         UNUSED(long_press);
         switch(model->selected) {
         case Daikin64TimerOnValue:
-            model->state.on_timer_minutes = daikin64_next_timer_minutes(model->state.on_timer_minutes);
+            model->state.on_timer_minutes =
+                daikin64_next_timer_minutes(model->state.on_timer_minutes);
             *state_changed = true;
             return false;
         case Daikin64TimerOnSet:
@@ -710,21 +715,26 @@ static bool daikin64_input_callback(InputEvent* event, void* context) {
         return true;
     }
 
-    if((event->type == InputTypeLong) && (event->key == InputKeyUp || event->key == InputKeyDown)) {
+    if((event->type == InputTypeLong) &&
+       (event->key == InputKeyUp || event->key == InputKeyDown)) {
         with_view_model(
             app->view,
             Daikin64RemoteModel * model,
             {
-                if(event->key == InputKeyUp && model->state.temperature < DAIKIN64_MAX_TEMP) {
-                    model->state.temperature++;
-                    daikin64_prepare_setting_send(&send_state, &model->state);
-                    should_send = true;
-                    should_save = true;
-                } else if(event->key == InputKeyDown && model->state.temperature > DAIKIN64_MIN_TEMP) {
-                    model->state.temperature--;
-                    daikin64_prepare_setting_send(&send_state, &model->state);
-                    should_send = true;
-                    should_save = true;
+                if(model->page == Daikin64PageMain) {
+                    if(event->key == InputKeyUp && model->state.temperature < DAIKIN64_MAX_TEMP) {
+                        model->state.temperature++;
+                        daikin64_prepare_setting_send(&send_state, &model->state);
+                        should_send = true;
+                        should_save = true;
+                    } else if(
+                        event->key == InputKeyDown &&
+                        model->state.temperature > DAIKIN64_MIN_TEMP) {
+                        model->state.temperature--;
+                        daikin64_prepare_setting_send(&send_state, &model->state);
+                        should_send = true;
+                        should_save = true;
+                    }
                 }
             },
             true);
@@ -732,12 +742,7 @@ static bool daikin64_input_callback(InputEvent* event, void* context) {
         if(should_send) daikin64_send_with_feedback(app, &send_state, false);
         if(should_save) {
             with_view_model(
-                app->view,
-                Daikin64RemoteModel * model,
-                {
-                    daikin64_save_state(model);
-                },
-                false);
+                app->view, Daikin64RemoteModel * model, { daikin64_save_state(model); }, false);
         }
         return true;
     }
@@ -797,12 +802,7 @@ static bool daikin64_input_callback(InputEvent* event, void* context) {
         }
         if(should_save) {
             with_view_model(
-                app->view,
-                Daikin64RemoteModel * model,
-                {
-                    daikin64_save_state(model);
-                },
-                false);
+                app->view, Daikin64RemoteModel * model, { daikin64_save_state(model); }, false);
         }
         return true;
     }

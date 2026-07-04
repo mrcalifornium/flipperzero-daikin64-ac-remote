@@ -26,9 +26,14 @@ int main(void) {
     state.mode = Daikin64ModeAuto;
     state.temperature = 27;
     state.fan = Daikin64FanLow;
-    state.swing = false;
+    state.swing = true;
     const uint8_t auto_packet[8] = {0x75, 0x27, 0x18, 0x10, 0x10, 0x41, 0x8A, 0x16};
     assert_packet(&state, auto_packet);
+
+    state.swing = false;
+    const uint8_t no_swing_packet[8] = {0x64, 0x27, 0x18, 0x10, 0x10, 0x41, 0x8A, 0x16};
+    assert_packet(&state, no_swing_packet);
+    state.swing = true;
 
     state.temperature = 28;
     const uint8_t temp_28_packet[8] = {0x85, 0x28, 0x18, 0x10, 0x10, 0x41, 0x8A, 0x16};
